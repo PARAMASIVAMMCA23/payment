@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bus Ticket Booking</title>
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+<style>
+  body {
+    background-image: url('./images/back.jpeg'); 
+    background-repeat:no-repeat;
+    background-size: cover;
+    background-position: center;
+}
+ 
+  h1 {
+    text-align: center;
+    font-size: 3em;
+    color: rgb(156, 24, 24);
+    font-weight: bold;
+    letter-spacing: 4px;
+    line-height: 70%;
+    font-family:'Times New Roman', Times, serif;
+}
+h2{
+  text-align: center;
+    color: rgb(243, 54, 54);
+    font-weight: bold;
+    letter-spacing: 4px;
+    line-height: 90%;
+    font-family:'Times New Roman', Times, serif;
+}
+  
+.form {
+  max-width: 500px;
+  margin: 0 auto;
+  padding: 20px;
+  border: 1px solid #baa30c;
+  border-radius: 5px;
+}
+.form label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 30px;
+}
+.form input{
+  width: calc(100% - 10px);
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  box-sizing: border-box;
+  font-size: 20px;
+}
+
+.form button {
+  width: 100%;
+  padding: 10px;
+  background-color: #1da01b;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.form button:hover {
+  background-color: #0056b3;
+}
+</style>
+</head>
+<body>
+  <h1>Sivam Holiday.com</h1>
+    <h2>Bus Ticket Booking</h2>
+    <form id="booking-form" class="form">
+        <div class="box">
+          <label for="from">From:</label>
+          <input type="text" id="from" name="from" required><br><br>
+          <label for="to">To:</label>
+          <input type="text" id="to" name="to" required><br><br>
+          <label for="name">Name:</label>
+          <input type="text" id="name" name="name" required><br><br>
+          <label for="adult-seats">Adult Seats:</label>
+          <input type="number" id="adult-seats" name="adultSeats" min="0" required><br><br>
+          <label for="child-seats">Child Seats:</label>
+          <input type="number" id="child-seats" name="childSeats" min="0" required><br><br>
+          <label for="date">Date:</label>
+          <input type="date" id="date" name="date" required><br><br>
+          <button type="button" id="payButton">Book Ticket</button>
+           
+            <div id="qrContainer"></div>
+            <a href="./index.html">return Home..</a>
+        </div>
+    </form>
+    
+    <script>
+        document.getElementById('payButton').addEventListener('click', function() {
+            const name = document.getElementById('name').value;
+            const adultSeats = parseInt(document.getElementById('adult-seats').value);
+            const childSeats = parseInt(document.getElementById('child-seats').value);
+            const date = document.getElementById('date').value;
+            const totalAmount = calculateTotalAmount(adultSeats, childSeats);
+        
+            fetch('http://localhost:8000/create-order', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                amount: totalAmount,
+                currency: 'INR'
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              const orderId = data.order_id;
+              const options = {
+                key: 'rzp_test_7Bp9IpbLB7VGtU',
+                amount: totalAmount,
+                currency: 'INR',
+                name: 'Bus Ticket Booking',
+                description: 'Payment for bus tickets',
+                order_id: orderId,
+                handler: function(response) {
+                  console.log('Payment successful:', response);
+                 
+                },
+                prefill: {
+                  name: name
+                }
+              };
+
+              const razorpayInstance = new Razorpay(options);
+              razorpayInstance.open();
+            })
+            .catch(error => {
+              console.error('Error creating Razorpay order:', error);
+            });
+        });
+
+        function calculateTotalAmount(adultSeats, childSeats) {
+            const adultPrice = 2000;
+            const childPrice = 900;
+            return (adultSeats * adultPrice) + (childSeats * childPrice);
+        }
+    </script>
+</body>
+</html>
